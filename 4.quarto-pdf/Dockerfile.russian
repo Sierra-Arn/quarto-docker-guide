@@ -1,0 +1,98 @@
+# =====================================================
+# Stage 1: System Dependencies
+# =====================================================
+FROM ubuntu:24.04
+
+# Non-English character rendering in LaTeX requires additional language packages
+# This example demonstrates setup for Russian language support
+
+ARG DEV_USER=user \
+    MICROMAMBA_VERSION=1.5.8 \
+    QUARTO_VERSION=1.7.0
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \ 
+    MAMBA_ROOT_PREFIX=/opt/conda \
+    ENV_NAME=dev
+
+# perl: Required for LaTeX package management and processing
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    tar \
+    bzip2 \
+    pandoc \
+    libfontconfig1 \
+    perl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -Ls "https://micro.mamba.pm/api/micromamba/linux-64/${MICROMAMBA_VERSION}" \
+    | tar -xjv bin/micromamba \
+    && mv bin/micromamba /usr/local/bin/ \
+    && chmod +x /usr/local/bin/micromamba
+
+RUN curl -sSL "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.deb" -o quarto.deb \
+    && dpkg -i quarto.deb \
+    && rm quarto.deb
+
+# =====================================================
+# Stage 2: User Configuration
+# =====================================================
+RUN useradd --create-home --shell /bin/bash ${DEV_USER} \
+    && mkdir -p ${MAMBA_ROOT_PREFIX} \
+    && chown -R ${DEV_USER}:${DEV_USER} ${MAMBA_ROOT_PREFIX} \
+    && chown -R ${DEV_USER}:${DEV_USER} /home/${DEV_USER}
+
+USER ${DEV_USER}
+WORKDIR /home/${DEV_USER}
+
+# =====================================================
+# Stage 3: R Environment Setup
+# =====================================================
+RUN micromamba shell init --shell bash --root-prefix="${MAMBA_ROOT_PREFIX}" && \
+    echo 'eval "$(micromamba shell hook --shell bash)"' >> ~/.bashrc && \
+    echo "micromamba activate ${ENV_NAME}" >> ~/.bashrc
+
+RUN micromamba create -y -n ${ENV_NAME} -c conda-forge \
+    r-base \
+    r-knitr \
+    r-rmarkdown \
+    r-tinytex \
+    && micromamba clean --all -y
+
+ENV PATH="${MAMBA_ROOT_PREFIX}/envs/${ENV_NAME}/bin:${PATH}" \ 
+    R_HOME="${MAMBA_ROOT_PREFIX}/envs/${ENV_NAME}/lib/R" \ 
+    R_LIBS_USER="${MAMBA_ROOT_PREFIX}/envs/${ENV_NAME}/lib/R/library"
+
+RUN echo 'options(repos = c(CRAN = "https://cloud.r-project.org"))' >> ~/.Rprofile && \
+    echo '.libPaths(c(Sys.getenv("R_LIBS_USER"), .libPaths()))' >> ~/.Rprofile
+
+RUN bash -c "source ~/.bashrc micromamba activate ${ENV_NAME} && \ 
+    quarto install tool tinytex --no-prompt && \
+    echo 'export PATH=\"\$HOME/.TinyTeX/bin/x86_64-linux:\$PATH\"' >> ~/.bashrc"
+
+ENV PATH="/home/${DEV_USER}/.TinyTeX/bin/x86_64-linux:${PATH}"
+
+# Install additional LaTeX packages for multilingual and font support
+# - Sources .bashrc to ensure micromamba environment is properly loaded
+# - Activates conda environment for consistent tool access
+# - tlmgr update --self: Updates TinyTeX package manager to latest version
+# - babel-russian: Provides Russian language support including hyphenation patterns
+# - fontspec: Enables advanced font selection and configuration in XeLaTeX
+# - Essential packages for rendering documents with custom fonts and Cyrillic text
+RUN bash -c "source ~/.bashrc micromamba activate ${ENV_NAME} && \
+    tlmgr update --self && \
+    tlmgr install \
+    babel-russian \
+    fontspec"
+
+# =====================================================
+# Stage 4: Verification and Runtime Configuration
+# =====================================================
+CMD ["bash", "-i", "-c", "\
+    micromamba --version && \
+    R --version && \
+    quarto --version && \
+    tlmgr --version && \
+    quarto check && \
+    bash"]

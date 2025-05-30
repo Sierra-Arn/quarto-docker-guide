@@ -1,0 +1,96 @@
+---
+title: "Quarto"
+format:
+  pdf:
+    pdf-engine: xelatex
+    include-in-header: resources/preamble.tex
+  html:
+    css: resources/styles.css
+---
+
+```{r setup, include=FALSE}
+options(reticulate.conda_binary = "/usr/local/bin/micromamba")
+Sys.setenv(RETICULATE_PYTHON = "/opt/conda/envs/dev/bin/python")
+library(reticulate)
+
+library(JuliaCall)
+julia_setup()
+```
+
+# Quarto
+Hello from Quarto!
+
+# LaTeX
+Hello from LaTeX!
+
+$$E=mc^2$$
+
+# Languages
+
+## Русский язык
+Привет от русского языка!
+
+## Python
+
+```{python}
+print("Hello from Python!")
+print("Привет от русского языка через язык Питона!")
+```
+
+## Julia
+
+```{julia}
+println("Hello from Julia!")
+```
+
+## R
+
+```{r}
+print("Hello from R!")
+```
+
+```{r}
+library(ggplot2)
+
+x <- seq(-2*pi, 2*pi, length.out = 100)
+y_sin <- sin(x)
+
+slope <- 0.5
+y_line <- slope * x
+
+data <- data.frame(
+  x = rep(x, 2),
+  y = c(y_sin, y_line),
+  type = rep(c("sin(x)", "y = 0.5x"), each = length(x))
+)
+
+ggplot(data, aes(x = x, y = y, color = type)) +
+  geom_line(linewidth = 1.2) +
+  scale_color_manual(
+    name = "Functions",
+    values = c("sin(x)" = "red", "y = 0.5x" = "blue"),
+    labels = c("sin(x)" = "Sine function", "y = 0.5x" = "Linear function")
+  ) +
+  labs(
+    title = "Sine Function and Linear Function",
+    subtitle = "Comparison of trigonometric and linear relationships",
+    x = "x",
+    y = "y"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12, color = "gray50"),
+    legend.position = "top",
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
+    legend.key.width = unit(1.5, "cm"),
+    legend.margin = margin(b = 20),
+    panel.grid.minor = element_blank(),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.3, color = "gray60") +
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.3, color = "gray60") +
+  guides(color = guide_legend(override.aes = list(linewidth = 2)))
+```

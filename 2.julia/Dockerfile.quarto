@@ -1,0 +1,97 @@
+# =====================================================
+# Stage 1: System Dependencies
+# =====================================================
+FROM ubuntu:24.04
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
+
+# Install base system utilities needed for Juliaup and Quarto
+# - pandoc: Required for Quarto document conversion
+# - DEBIAN_FRONTEND: Suppresses interactive prompts
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    pandoc \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Quarto CLI system-wide for document publishing workflows
+# - Self-contained DEB package ensures all dependencies are included
+# - AMD64 architecture specific for optimal performance
+# - Version pinned for reproducible builds across environments
+# - Global installation makes quarto available to all system users
+# - DEB package handles PATH configuration and system integration automatically
+ARG QUARTO_VERSION=1.7.0
+
+RUN curl -sSL "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.deb" -o quarto.deb \
+    && dpkg -i quarto.deb \
+    && rm quarto.deb
+
+# =====================================================
+# Stage 2: User Configuration
+# =====================================================
+ARG DEV_USER=user
+
+RUN useradd --create-home --shell /bin/bash ${DEV_USER} && \
+    chown -R ${DEV_USER}:${DEV_USER} /home/${DEV_USER}
+
+USER ${DEV_USER}
+WORKDIR /home/${DEV_USER}
+
+# =====================================================
+# Stage 3: Julia Environment Setup
+# =====================================================
+RUN curl -fsSL https://install.julialang.org | sh -s -- -y --path ~/.juliaup
+
+ENV PATH="/home/${DEV_USER}/.juliaup/bin:${PATH}"
+
+RUN juliaup add 1.11.5 && \
+    juliaup default 1.11.5
+
+RUN echo 'export JULIA_PROJECT="@."' >> ~/.bashrc
+
+RUN julia -e 'using Pkg; Pkg.add(["Example"])' && \
+    julia -e 'using Pkg; Pkg.precompile()'
+
+# =====================================================
+# Stage 4: Verification and Runtime Configuration
+# =====================================================
+
+# Extended verification for Quarto integration
+# - Checks Quarto version and dependency integrity
+# - Maintains interactive shell with full toolchain
+CMD ["bash", "-i", "-c", "julia --version && quarto --version && quarto check && bash"]
+
+# =====================================================
+# Julia Execution Modes
+# =====================================================
+
+# Native Julia Engine (recommended)
+# - Auto-installs QuartoNotebookRunner.jl in isolated env
+# - No Python/Jupyter dependency
+# - Example header configuration:
+
+# ---
+# title: "Julia Notebook"
+# engine: julia
+# ---
+#
+# ## Julia-example
+# ```{julia}
+# println("Hello from Julia!")
+# ```
+
+# IJulia Kernel
+# - Requires pre-configured Jupyter kernel
+# - Example header configuration:
+
+# ---
+# title: "Julia Notebook"
+# jupyter: julia-kernel
+# ---
+#
+# ## Julia-example
+# ```{julia}
+# println("Hello from Julia!")
+# ```

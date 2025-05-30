@@ -1,0 +1,27 @@
+\usepackage{fontspec}
+\usepackage[russian]{babel}
+
+\setmainfont{Open Sans}[
+  Path = resources/fonts/Open_Sans/static/,
+  Extension = .ttf,
+  UprightFont = OpenSans-Regular,
+  BoldFont = OpenSans-Bold,
+  ItalicFont = OpenSans-Italic,
+  BoldItalicFont = OpenSans-BoldItalic
+]
+
+\setmonofont{Fira Code}[
+  Path = resources/fonts/Fira_Code/static/,
+  Extension = .ttf,
+  UprightFont = FiraCode-Regular,
+  BoldFont = FiraCode-Bold,
+  Ligatures = NoCommon
+]
+
+\newfontfamily\headingfont{Roboto Slab}[
+  Path = resources/fonts/Roboto_Slab/static/,
+  Extension = .ttf,
+  UprightFont = RobotoSlab-Regular,
+  BoldFont = RobotoSlab-Bold
+]
+\addtokomafont{disposition}{\headingfont}

@@ -1,0 +1,46 @@
+{
+    // Development container configuration for Quarto-based data science environment
+    // Provides integrated development experience with pre-configured tools and extensions
+    "name": "Quarto Docker Guide",
+    
+    // Container build configuration
+    "build": {
+        // Reference to Dockerfile in same directory
+        "dockerfile": "Dockerfile",
+        
+        // Build arguments for user/permission management
+        // These should match host user ID/GID for seamless file ownership
+        "args": {
+            "DEV_USER": "vscode",        // Username for development user (VSCode default)
+            "DEV_USER_ID": "1000",       // User ID - typically matches host user ID
+            "DEV_USER_GID": "1000"       // Group ID - typically matches host group ID
+        }
+    },
+    
+    // VSCode-specific customizations
+    "customizations": {
+        "vscode": {
+            // Pre-installed extensions for comprehensive data science workflow
+            "extensions": [
+                // Python ecosystem support
+                "ms-python.python",              // Core Python language support
+                "ms-python.vscode-pylance",      // Advanced Python IntelliSense and type checking
+                "ms-toolsai.jupyter",            // Jupyter notebook integration
+                
+                // Document authoring and publishing
+                "quarto.quarto",                 // Quarto document rendering and preview
+                
+                // Additional language support
+                "julialang.language-julia",      // Julia programming language support
+                "REditorSupport.r",              // R language support and debugging
+                
+                // Document viewing and web development
+                "ms-vscode.live-server",         // Live preview server for web content (html documents)
+                "James-Yu.latex-workshop",       // LaTeX editing, compilation, and PDF preview
+                
+                // Container development tools
+                "ms-azuretools.vscode-containers" // Docker and container management
+            ]
+        }
+    }
+}

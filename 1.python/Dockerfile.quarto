@@ -1,0 +1,100 @@
+# =====================================================
+# Stage 1: System Dependencies
+# =====================================================
+FROM ubuntu:24.04
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8
+
+# Install base system utilities needed for Micromamba and Quarto
+# - pandoc: Required for Quarto document conversion
+# - DEBIAN_FRONTEND: Suppresses interactive prompts
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    tar \
+    bzip2 \
+    pandoc \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG MICROMAMBA_VERSION=1.5.8
+RUN curl -Ls "https://micro.mamba.pm/api/micromamba/linux-64/${MICROMAMBA_VERSION}" \
+    | tar -xjv bin/micromamba \
+    && mv bin/micromamba /usr/local/bin/ \
+    && chmod +x /usr/local/bin/micromamba
+
+# Install Quarto CLI system-wide for document publishing workflows
+# - Self-contained DEB package ensures all dependencies are included
+# - AMD64 architecture specific for optimal performance
+# - Version pinned for reproducible builds across environments
+# - Global installation makes quarto available to all system users
+# - DEB package handles PATH configuration and system integration automatically
+ARG QUARTO_VERSION=1.7.0
+
+RUN curl -sSL "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.deb" -o quarto.deb \
+    && dpkg -i quarto.deb \
+    && rm quarto.deb
+
+# =====================================================
+# Stage 2: User Configuration
+# =====================================================
+ARG DEV_USER=user
+ENV MAMBA_ROOT_PREFIX=/opt/conda
+
+RUN useradd --create-home --shell /bin/bash ${DEV_USER} \
+    && mkdir -p ${MAMBA_ROOT_PREFIX} \
+    && chown -R ${DEV_USER}:${DEV_USER} ${MAMBA_ROOT_PREFIX} \
+    && chown -R ${DEV_USER}:${DEV_USER} /home/${DEV_USER}
+
+USER ${DEV_USER}
+WORKDIR /home/${DEV_USER}
+
+# =====================================================
+# Stage 3: Python Environment Setup
+# =====================================================
+ENV ENV_NAME=dev
+RUN micromamba shell init --shell bash --root-prefix="${MAMBA_ROOT_PREFIX}" && \
+    echo 'eval "$(micromamba shell hook --shell bash)"' >> ~/.bashrc && \
+    echo "micromamba activate ${ENV_NAME}" >> ~/.bashrc
+
+# Create base Python environment with Jupyter for code execution
+RUN micromamba create -y -n ${ENV_NAME} -c conda-forge \
+    python \
+    jupyter \
+    && micromamba clean --all -y
+
+ENV PATH="${MAMBA_ROOT_PREFIX}/envs/${ENV_NAME}/bin:${PATH}"
+
+# =====================================================
+# Stage 4: Verification and Runtime Configuration
+# =====================================================
+
+# Extended verification for Quarto integration
+# - Checks Quarto version and dependency integrity
+# - Maintains interactive shell with full toolchain
+CMD ["bash", "-i", "-c", "\
+    micromamba --version && \
+    python --version && \
+    quarto --version && \
+    quarto check && \
+    bash"]
+
+# =====================================================
+# Python-Quarto Configuration Basics
+# =====================================================
+
+# Standard Python Execution:
+# - Specify python jupyter kernel in YAML header for Python-only notebooks
+# - Example header configuration:
+
+# ---
+# title: "Python Notebook"
+# format: html
+# jupyter: python3
+# ---
+#
+# ## Python-example
+# ```{python}
+# print("Hello from Python!")
+# ```

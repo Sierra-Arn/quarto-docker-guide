@@ -1,0 +1,26 @@
+/* Open Sans */
+@font-face {
+  font-family: 'Open Sans';
+  src: url('fonts/Open_Sans/OpenSans-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Roboto Slab */
+@font-face {
+  font-family: 'Roboto Slab';
+  src: url('fonts/Roboto_Slab/RobotoSlab-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fira Code */
+@font-face {
+  font-family: 'Fira Code';
+  src: url('fonts/Fira_Code/FiraCode-VariableFont_wght.ttf') format('truetype');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
