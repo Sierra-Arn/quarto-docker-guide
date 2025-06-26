@@ -149,7 +149,7 @@ Combine all languages with cross-language communication.
 
 ## **License**
 
-This project is distributed under the [MIT License](LICENSE).
+This project is distributed under the [BSD-3-Clause License](LICENSE).
 
 > **Third-Party Components**  
 > This project includes components with separate licenses. Font files and some dependencies may have different licensing terms. Please review individual component licenses before commercial use.
